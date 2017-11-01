@@ -2,6 +2,7 @@
 	<script type="text/javascript">
 		window.onload = function ()
 		{
+			return;
 			const link = "https://www.bidbud.co.nz/browse/Computers?exclude_categories=-3842-4250-2924-0091-8729-0356-0358-0362-4570-0363-0364-0360-9844-0244-0043-0397&search_string=&category=0002-&user_region=100&sort_order=Default&condition=All&shipping_method=&suburbs=&min_price=&max_price=&display_type=normal&closing_type=";
 			const para = document.createElement("p");
 			const data = document.createTextNode(link);
@@ -12,7 +13,21 @@
 	</script>
 </head>
 <body>
+	<script>
+
+		function launchFeed()
+		{
+			const link = document.getElementById("link").value;
+			document.getElementById("search_res").src = link;
+		}
+	</script>
+
 	<div id="config">
-	<input>
+		Enter link to BidBud search:
+		<input id ="link"type="text">
+		<button id="search" type="button" onclick="launchFeed();">Search</button>
 	</div>
+	
+	<iframe id="search_res" frameborder=1 width=100% height=100%>
+	</iframe>
 </body>
