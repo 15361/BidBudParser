@@ -1,27 +1,35 @@
 <head>
 	<script type="text/javascript">
+		let interval = 0
 		window.onload = function ()
 		{
 			const def_link = "https://www.bidbud.co.nz/browse/Computers?exclude_categories=-3842-4250-2924-0091-8729-0356-0358-0362-4570-0363-0364-0360-9844-0244-0043-0397&search_string=&category=0002-&user_region=100&sort_order=Default&condition=All&shipping_method=&suburbs=&min_price=&max_price=&display_type=normal&closing_type=";
 			document.getElementById("search_res").src = def_link;
+			interval = setInterval(updateFeed, 10000);
 		}
 	</script>
 </head>
 <body>
 	<script>
-
-		function launchFeed()
+		function parseRequest()
 		{
 			const link = document.getElementById("link").value;
-			const def_link = "https://www.bidbud.co.nz/browse/Computers?exclude_categories=-3842-4250-2924-0091-8729-0356-0358-0362-4570-0363-0364-0360-9844-0244-0043-0397&search_string=&category=0002-&user_region=100&sort_order=Default&condition=All&shipping_method=&suburbs=&min_price=&max_price=&display_type=normal&closing_type=";
 			if(link)
 			{
 				document.getElementById("search_res").src = link;
 			}
-			else
-			{
-			document.getElementById("search_res").src = def_link;
-			}
+		}
+		
+		function updateFeed()
+		{
+			parseRequest();
+		}
+		
+		function launchFeed()
+		{
+			clearInterval(interval);
+			parseRequest();
+			interval = setInterval(updateFeed, 10000);
 		}
 	</script>
 
