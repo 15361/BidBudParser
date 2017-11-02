@@ -4,11 +4,13 @@ let default_search = true
 const def_link = "https://www.bidbud.co.nz/browse/Computers?exclude_categories=-3842-4250-2924-0091-8729-0356-0358-0362-4570-0363-0364-0360-9844-0244-0043-0397&search_string=&category=0002-&user_region=100&sort_order=Default&condition=All&shipping_method=&suburbs=&min_price=&max_price=&display_type=normal&closing_type=";
 let link = def_link;
 
+const delay = 37000
+
 window.onload = function ()
 {
   display_window = document.getElementById("display_window");
   parseRequest();
-  interval = setInterval(updateFeed, 10000);
+  interval = setInterval(updateFeed, delay);
 };
 
 function fatalError()
@@ -19,7 +21,6 @@ function fatalError()
 
 function isValidLink( link )
 {
-  return true;
   let prefix = "^(https?:\/\/)?www\.bidbud\.co\.nz\/browse\/";
   return link && link.search(prefix) === 0;
 }
@@ -48,8 +49,20 @@ function getLink()
 
 function parseData( data )
 {
-  
-  display_window.src = "data:text/html;charset=utf-8," + escape(data);
+  if( data.search("excessive_searches") < data.length - 1 )
+  {
+    alert("Search limit exceeded");
+    fatalError();
+  }
+
+  head = data.slice(0, data.search("</head>"));
+
+  console.log(data);
+  data = data.slice(data.search("<table class=\"table\" id=\"search_results\">"));
+  console.log(data);
+  data = data.slice(0, data.search("</table>"));
+  console.log(data);
+  display_window.src = "data:text/html;charset=utf-8," + escape(head + "<body>\n" + data + "\n</body>");
 }
 
 function displayBidBudData()
@@ -79,5 +92,5 @@ function launchFeed()
 {
   clearInterval(interval);
   parseRequest( true );
-  interval = setInterval(updateFeed, 10000);
+  interval = setInterval(updateFeed, delay);
 }
