@@ -1,30 +1,46 @@
 <head>
 	<script type="text/javascript">
 		let interval = 0
+		let display_window = undefined
 		window.onload = function ()
 		{
 			const def_link = "https://www.bidbud.co.nz/browse/Computers?exclude_categories=-3842-4250-2924-0091-8729-0356-0358-0362-4570-0363-0364-0360-9844-0244-0043-0397&search_string=&category=0002-&user_region=100&sort_order=Default&condition=All&shipping_method=&suburbs=&min_price=&max_price=&display_type=normal&closing_type=";
-			document.getElementById("search_res").src = def_link;
+			display_window = document.getElementById("display_window");
+			display_window.src = def_link;
 			interval = setInterval(updateFeed, 10000);
 		}
 	</script>
 </head>
 <body>
 	<script>
+		function isValidLink( link )
+		{
+			let prefix = "^(https?:\/\/)?www\.bidbud\.co\.nz\/browse\/";
+			return link && link.search(prefix) === 0;
+		}
+
 		function parseRequest()
 		{
-			const link = document.getElementById("link").value;
-			if(link)
+			let link = document.getElementById("link").value;
+
+			// Check it is a valid Bid Bud Link
+			if(isValidLink(link))
 			{
-				document.getElementById("search_res").src = link;
+				// Prefix with http if needed
+				if(link.substr(0, 4) !== "http")
+				{
+					link = "http://" + link;
+				}
+
+				display_window.src = link;
 			}
 		}
-		
+
 		function updateFeed()
 		{
 			parseRequest();
 		}
-		
+
 		function launchFeed()
 		{
 			clearInterval(interval);
@@ -38,7 +54,7 @@
 		<input id ="link"type="text">
 		<button id="search" type="button" onclick="launchFeed();">Search</button>
 	</div>
-	
-	<iframe id="search_res" frameborder=1 width=100% height=100%>
+
+	<iframe id="display_window" frameborder=1 width=100% height=100%>
 	</iframe>
 </body>
