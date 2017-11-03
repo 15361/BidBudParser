@@ -1,21 +1,23 @@
 let interval = 0
-let display_window = undefined
-let disply_doc = undefined
-let default_search = true
-const def_link = "https://www.bidbud.co.nz/browse/Computers?exclude_categories=-3842-4250-2924-0091-8729-0356-0358-0362-4570-0363-0364-0360-9844-0244-0043-0397&search_string=&category=0002-&user_region=100&sort_order=Default&condition=All&shipping_method=&suburbs=&min_price=&max_price=&display_type=normal&closing_type=";
-let link = def_link;
-let doc_set = false;
-let ids = [];
+let display_window = []
+let disply_doc = []
+const def_links = ["https://www.bidbud.co.nz/search?title=Latest+listings+in+Components&search_string=&user_region=100&category=0002-0359-&condition=Used&sort_order=ExpiryDesc&date_from=1509682255&exclude_categories=-0494-3947-0205-1353-0177-0827&saved=1&source=30933",
+"https://www.bidbud.co.nz/search?title=Latest+listings+in+Desktops&search_string=&user_region=100&category=0002-4715-&condition=Used&sort_order=ExpiryDesc&date_from=1509696642&exclude_categories=-0494-6911&saved=1&source=37093"];
+let doc_set = [ false, false ];
 
 // Bid Bud enforces a 100 request per hour limit
-const delay = 37000;
+const delay = 3000;
 
 window.onload = function ()
 {
-  display_window = document.getElementById("display_window");
-  disply_doc = display_window.contentWindow ||
-    display_window.contentDocument.document ||
-    display_window.contentDocument;
+  display_window[0] = document.getElementById("display_window_left");
+  disply_doc[0] = display_window[0].contentWindow ||
+    display_window[0].contentDocument.document ||
+    display_window[0].contentDocument
+  display_window[1] = document.getElementById("display_window_right");
+  disply_doc[1] = display_window[1].contentWindow ||
+    display_window[1].contentDocument.document ||
+    display_window[1].contentDocument;
   parseRequest();
   interval = setInterval(updateFeed, delay);
 };
@@ -25,45 +27,12 @@ function fatalError()
   clearInterval(interval);
   interval = 0;
   alert("Unfortunately there was an error that could not be recovered from.\nPlease try refreshing the page or using a different browser");
-  disply_doc.document.close();
 }
 
-function isValidLink( link )
+function makeFullPaths( data, idx )
 {
-  let prefix = "^(https?:\/\/)?www\.bidbud\.co\.nz\/(browse\/|search)";
-  return link && link.search(prefix) === 0;
-}
-
-function getLink()
-{
-  let tmp_link = document.getElementById("link").value;
-
-  // Check it is a valid Bid Bud Link
-  if ( !isValidLink(tmp_link) ) {
-    document.getElementById("link").value = "";
-    alert("Invalid URL.\nUse www.bidbud.co.nz/browse/<Topic>?<Search Criteria>")
-    return;
-  }
-
-  link = tmp_link;
-
-  // Prefix with http if needed
-  if(link.substr(0, 4) !== "http")
-  {
-    link = "http://" + link;
-  }
-
-  default_search = false;
-  doc_set = false;
-  ids = [];
-  disply_doc.document.open();
-  disply_doc.document.write("");
-  disply_doc.document.close();
-}
-
-function makeFullPaths( data )
-{
-	const link_url = link.slice(0, link.search("\/(browse|search)"));
+  console.log(idx);
+	const link_url = def_links[idx].slice(0, def_links[idx].search("\/(browse|search)"));
 	data = data.replace(/href="\//g, "href=\"" + link_url + "\/");
 	data = data.replace(/href="\?/g, "href=\"" + link_url + "\?");
 
@@ -104,11 +73,11 @@ function getResultsTableArray( data )
   return entries;
 }
 
-function updateDoc( data )
+function updateDoc( data, idx )
 {
   table_data = getResultsTableArray( data );
 
-  table = disply_doc.document.getElementById("search_results");
+  table = disply_doc[idx].document.getElementById("search_results");
 
   rows = table.rows.length - 1;
 
@@ -134,8 +103,9 @@ function updateDoc( data )
   }
 }
 
-function parseData( data )
+function parseData( data, idx )
 {
+  console.log(idx);
   if( data.search("excessive_searches") !== -1 )
   {
     alert("Search limit exceeded");
@@ -154,35 +124,38 @@ function parseData( data )
 	  fatalError();
   }
 
-  data = makeFullPaths( data );
-  if( !doc_set )
+  data = makeFullPaths( data, idx );
+  if( !doc_set[idx] )
   {
-    disply_doc.document.open();
-    disply_doc.document.write(  makeFullPaths( head ) + "<body>\n" + data + "\n</body>");
-    disply_doc.document.close();
-    doc_set = true;
+    disply_doc[idx].document.open();
+    disply_doc[idx].document.write(  makeFullPaths( head, idx ) + "<body>\n" + data + "\n</body>");
+    disply_doc[idx].document.close();
+    doc_set[idx] = true;
   }
   else {
-    updateDoc( data );
+    updateDoc( data, idx );
   }
 }
 
 function displayBidBudData()
 {
-  $.get(
-    link,
-    parseData
-  )
-  .error( function() { alert( "Failed to get data. Check URL is correct and CORS extension is installed." ); fatalError(); });
+  for( i = 0; i < disply_doc.length; i++ )
+  {
+    const idx = i;
+    function callback( data )
+    {
+      parseData( data, idx );
+    }
+    $.get(
+      def_links[i],
+      callback
+    )
+    .error( function() { alert( "Failed to get data. Check URL is correct and CORS extension is installed." ); fatalError(); });
+  }
 }
 
-function parseRequest( search = false )
+function parseRequest()
 {
-  if(search)
-  {
-    getLink();
-  }
-
   displayBidBudData();
 }
 
@@ -190,14 +163,4 @@ function updateFeed()
 {
   console.log("Update");
   parseRequest();
-}
-
-function launchFeed()
-{
-  if(interval !== 0)
-  {
-    clearInterval(interval);
-  }
-  parseRequest( true );
-  interval = setInterval(updateFeed, delay);
 }
