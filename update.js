@@ -6,7 +6,7 @@ const def_links = ["https://www.bidbud.co.nz/search?title=Latest+listings+in+Com
 let doc_set = [ false, false ];
 
 // Bid Bud enforces a 100 request per hour limit
-const delay = 3000;
+const delay = 74000;
 
 window.onload = function ()
 {
@@ -31,7 +31,6 @@ function fatalError()
 
 function makeFullPaths( data, idx )
 {
-  console.log(idx);
 	const link_url = def_links[idx].slice(0, def_links[idx].search("\/(browse|search)"));
 	data = data.replace(/href="\//g, "href=\"" + link_url + "\/");
 	data = data.replace(/href="\?/g, "href=\"" + link_url + "\?");
@@ -81,9 +80,6 @@ function updateDoc( data, idx )
 
   rows = table.rows.length - 1;
 
-  console.log(rows);
-  console.log(table_data);
-
   for( i = Math.max(table_data.length, rows) - 1; i >= 0; i--)
   {
     if( i < rows )
@@ -93,11 +89,19 @@ function updateDoc( data, idx )
     if( i < table_data.length )
     {
       row = table.insertRow(i + 1);
+      row.className = "is_featured";
       for( j = 0; j < table_data[i].length; j++)
       {
         var cell = row.insertCell(j);
+        if( j === 1)
+        {
+          cell.className = "lvimg";
+        }
+        else if( j === 1 )
+        {
+          cell.className = "hidden-xs"
+        }
         cell.innerHTML = table_data[i][j];
-        console.log(cell.innerHtml);
       }
     }
   }
@@ -105,7 +109,6 @@ function updateDoc( data, idx )
 
 function parseData( data, idx )
 {
-  console.log(idx);
   if( data.search("excessive_searches") !== -1 )
   {
     alert("Search limit exceeded");
