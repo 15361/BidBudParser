@@ -30,7 +30,7 @@ function fatalError()
 
 function isValidLink( link )
 {
-  let prefix = "^(https?:\/\/)?www\.bidbud\.co\.nz\/browse\/";
+  let prefix = "^(https?:\/\/)?www\.bidbud\.co\.nz\/(browse\/|search)";
   return link && link.search(prefix) === 0;
 }
 
@@ -57,13 +57,13 @@ function getLink()
   doc_set = false;
   ids = [];
   disply_doc.document.open();
-  display_window.write("");
+  disply_doc.document.write("");
   disply_doc.document.close();
 }
 
 function makeFullPaths( data )
 {
-	const link_url = link.slice(0, link.search("\/browse"));
+	const link_url = link.slice(0, link.search("\/(browse|search)"));
 	data = data.replace(/href="\//g, "href=\"" + link_url + "\/");
 	data = data.replace(/href="\?/g, "href=\"" + link_url + "\?");
 
