@@ -56,8 +56,8 @@ function makeFullPaths( data )
 	const link_url = link.slice(0, link.search("\/browse"));
 	data = data.replace(/href="\//g, "href=\"" + link_url + "\/");
 	data = data.replace(/href="\?/g, "href=\"" + link_url + "\?");
-	
-	data = data.replace("/<a /g", "<a target=\"_blank\"");
+
+	data = data.replace(/<a /g, "<a target=\"_blank\"");
 	return data;
 }
 
@@ -79,17 +79,18 @@ function parseData( data )
 
   data = data.slice(data.search("<table class=\"table\" id=\"search_results\">"));
   data = data.slice(0, data.search("</table>"));
-  
+
   if(!data)
   {
 	  alert("Invalid URL.\nUse www.bidbud.co.nz/browse/<Topic>?<Search Criteria>");
 	  fatalError();
   }
-  
+
+  // Only update with new entries
+  data = findNewEntries( data );
   // Change relative paths
   data = makeFullPaths( data );
-  data = findNewEntries( data );
-  
+
   display_window.src = "data:text/html;charset=utf-8," + escape(head + "<body>\n" + data + "\n</body>");
 }
 
