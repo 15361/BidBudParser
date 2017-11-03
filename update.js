@@ -1,16 +1,21 @@
 let interval = 0
 let display_window = undefined
+let disply_doc = undefined
 let default_search = true
 const def_link = "https://www.bidbud.co.nz/browse/Computers?exclude_categories=-3842-4250-2924-0091-8729-0356-0358-0362-4570-0363-0364-0360-9844-0244-0043-0397&search_string=&category=0002-&user_region=100&sort_order=Default&condition=All&shipping_method=&suburbs=&min_price=&max_price=&display_type=normal&closing_type=";
 let link = def_link;
-let body = undefined;
+let doc_set = false;
 let ids = [];
 
-const delay = 37000
+// Bid Bud enforces a 100 request per hour limit
+const delay = 37000;
 
 window.onload = function ()
 {
   display_window = document.getElementById("display_window");
+  disply_doc = display_window.contentWindow ||
+    display_window.contentDocument.document ||
+    display_window.contentDocument;
   parseRequest();
   interval = setInterval(updateFeed, delay);
 };
@@ -20,6 +25,7 @@ function fatalError()
   clearInterval(interval);
   interval = 0;
   alert("Unfortunately there was an error that could not be recovered from.\nPlease try refreshing the page or using a different browser");
+  disply_doc.document.close();
 }
 
 function isValidLink( link )
@@ -48,9 +54,11 @@ function getLink()
   }
 
   default_search = false;
-  body = undefined;
+  doc_set = false;
   ids = [];
-  display_window.src = undefined;
+  disply_doc.document.open();
+  display_window.write("");
+  disply_doc.document.close();
 }
 
 function makeFullPaths( data )
@@ -59,98 +67,71 @@ function makeFullPaths( data )
 	data = data.replace(/href="\//g, "href=\"" + link_url + "\/");
 	data = data.replace(/href="\?/g, "href=\"" + link_url + "\?");
 
-	data = data.replace(/<a /g, "<a target=\"_blank\"");
+	data = data.replace(/<a /g, "<a target=\"_blank\" ");
 	return data;
 }
 
-function removeElement( tmp_body, id )
+function getResultsTableArray( data )
 {
-  block_start = tmp_body.search("<tr class=\"is_featured\" id=\"" + id + "\">");
-  block_end = tmp_body.slice(block_start).search("<\/tr>");
-  return tmp_body.slice(0, block_start) + tmp_body.slice( block_end + 5 );
+  start = data.search("<\/thead>") + 8;
+  end = data.search("<\/table>");
+  tbody = data.slice( start, end );
+  entries = []
+
+  next = tbody.search("<tr");
+  while( next !== -1 )
+  {
+    tbody = tbody.slice( next );
+    tbody = tbody.slice(tbody.search(">") + 1);
+    end = tbody.search("<\/tr>");
+
+    trow = tbody.slice( 0, end );
+    next_col = trow.search("<td");
+    cols = [];
+    while( next_col !== -1 )
+    {
+      trow = trow.slice(next_col);
+      trow = trow.slice( trow.search(">") + 1 );
+      end_col = trow.search("<\/td>");
+
+      cols.push( trow.slice( 0, end_col ) );
+      next_col = trow.search("<td");
+    }
+
+    entries.push( cols );
+    next = tbody.search("<tr");
+  }
+  return entries;
 }
 
-function removeOldEntries( data )
+function updateDoc( data )
 {
-  tmp_body = body;
+  table_data = getResultsTableArray( data );
 
-  for( i = ids.length - 1; i >= 0; i--)
+  table = disply_doc.document.getElementById("search_results");
+
+  rows = table.rows.length - 1;
+
+  console.log(rows);
+  console.log(table_data);
+
+  for( i = Math.max(table_data.length, rows) - 1; i >= 0; i--)
   {
-    id = ids[i];
-    if( data.search("<tr class=\"is_featured\" id=\"" + id + "\">") === -1 )
+    if( i < rows )
     {
-      tmp_body = removeElement( tmp_body, id );
-      ids.splice( i, 1 );
+      table.deleteRow(i + 1);
+    }
+    if( i < table_data.length )
+    {
+      row = table.insertRow(i + 1);
+      for( j = 0; j < table_data[i].length; j++)
+      {
+        var cell = row.insertCell(j);
+        cell.innerHTML = table_data[i][j];
+        console.log(cell.innerHtml);
+      }
     }
   }
-
-  return tmp_body;
-}
-
-function updateChangedEntries( data, tmp_body )
-{
-  new_data = "";
-  table_body = data.slice( data.search("<tbody>") + 7, data.search("<\/tbody>") );
-  start = table_body.search("<tr class=\"is_featured\" id=\"[0-9][0-9]*\">");
-  if( start === -1 )
-  {
-    alert("Unable to get search results");
-    fatalError();
-    return;
-  }
-  while( start !== -1 )
-  {
-    table_body = table_body.slice(start);
-    // Get end of id string
-    end = table_body.slice(28).search("\"");
-    block_end = table_body.search("<\/tr>") + 5;
-    if( end === -1 || block_end === -1 )
-    {
-      alert("Could not parse listing");
-      fatalError();
-      return;
-    }
-    id = table_body.substr(28, end);
-    if( $.inArray( id, ids ) === -1 )
-    {
-      // Save data to insert
-      ids.push( id );
-      new_data += table_body.slice(0, block_end);
-    }
-    else {
-      // Check for update
-      tmp_body
-    }
-
-    table_body = table_body.slice( block_end );
-    start = table_body.search("<tr class=\"is_featured\" id=\"[0-9][0-9]*\">");
-  }
-
-  return tmp_body;
-}
-
-function insertNewData( new_data, tmp_body )
-{
-    const insert_idx = tmp_body.search("<tbody>") + 7;
-    if( insert_idx === -1 )
-    {
-      alert("Failed updating feed");
-      fatalError();
-      return;
-    }
-    new_data = tmp_body.slice(0, insert_idx) + new_data + tmp_body.slice(insert_idx);
-    return new_data;
-}
-
-function updateDisplay( data )
-{
-  if( body !== undefined)
-  {
-    tmp_body = removeOldEntries( data );
-    data = updateChangedEntries( data, tmp_body );
-  }
-  // Change relative paths of new
-  return makeFullPaths( data );
 }
 
 function parseData( data )
@@ -165,7 +146,7 @@ function parseData( data )
   head = data.slice(0, data.search("</head>") + 7);
 
   data = data.slice(data.search("<table class=\"table\" id=\"search_results\">"));
-  data = data.slice(0, data.search("</table>"));
+  data = data.slice(0, data.search("</table>") + 8);
 
   if(!data)
   {
@@ -173,11 +154,17 @@ function parseData( data )
 	  fatalError();
   }
 
-  // Only update with new entries
-  data = updateDisplay( data );
-  body = data;
-
-  display_window.src = "data:text/html;charset=utf-8," + escape(head + "<body>\n" + data + "\n</body>");
+  data = makeFullPaths( data );
+  if( !doc_set )
+  {
+    disply_doc.document.open();
+    disply_doc.document.write(  makeFullPaths( head ) + "<body>\n" + data + "\n</body>");
+    disply_doc.document.close();
+    doc_set = true;
+  }
+  else {
+    updateDoc( data );
+  }
 }
 
 function displayBidBudData()
@@ -201,6 +188,7 @@ function parseRequest( search = false )
 
 function updateFeed()
 {
+  console.log("Update");
   parseRequest();
 }
 
