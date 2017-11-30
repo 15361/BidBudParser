@@ -1,8 +1,8 @@
 let interval = 0
 let display_window = []
 let disply_doc = []
-const def_links = ["https://www.bidbud.co.nz/search?title=Latest+listings+in+Components&search_string=&user_region=100&category=0002-0359-&condition=Used&sort_order=ExpiryDesc&date_from=1509682255&exclude_categories=-0494-3947-0205-1353-0177-0827&saved=1&source=30933",
-"https://www.bidbud.co.nz/search?title=Latest+listings+in+Desktops&search_string=&user_region=100&category=0002-4715-&condition=Used&sort_order=ExpiryDesc&date_from=1509696642&exclude_categories=-0494-6911&saved=1&source=37093"];
+const def_links = ["https://www.bidbud.co.nz/search?title=Latest+listings+in+Components&search_string=&user_region=100&category=0002-0359-&condition=Used&sort_order=ExpiryDesc&date_from=1509682255&exclude_categories=-0494-3947-0205-1353-0177-0827&saved=1&source=30933"];
+//const filter_terms = ["term1", "term2", ..., "term last"]
 let doc_set = [ false, false ];
 
 // Bid Bud enforces a 100 request per hour limit
@@ -14,10 +14,6 @@ window.onload = function ()
   disply_doc[0] = display_window[0].contentWindow ||
     display_window[0].contentDocument.document ||
     display_window[0].contentDocument
-  display_window[1] = document.getElementById("display_window_right");
-  disply_doc[1] = display_window[1].contentWindow ||
-    display_window[1].contentDocument.document ||
-    display_window[1].contentDocument;
   parseRequest();
   interval = setInterval(updateFeed, delay);
 };
@@ -142,7 +138,7 @@ function parseData( data, idx )
 
 function displayBidBudData()
 {
-  for( i = 0; i < disply_doc.length; i++ )
+  for( i = 0; i < def_links.length; i++ )
   {
     const idx = i;
     function callback( data )
